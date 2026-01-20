@@ -1,0 +1,248 @@
+import { useState } from 'react';
+import { Header } from './components/Header';
+import { UploadSection } from './components/UploadSection';
+import { PreviewSection } from './components/PreviewSection';
+import { EditorSection } from './components/EditorSection';
+import { DownloadSection } from './components/DownloadSection';
+import { AuthModal } from './components/AuthModal';
+import { HistoryPanel } from './components/HistoryPanel';
+import { ProfileModal } from './components/ProfileModal';
+import { Files, FileEdit, Archive } from 'lucide-react';
+
+export interface OCRResult {
+  id: string;
+  originalFileName: string;
+  fileType: string;
+  uploadDate: Date;
+  text: string;
+  fileUrl?: string;
+}
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  phone?: string;
+  organization?: string;
+}
+
+function App() {
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string>('');
+  const [rotation, setRotation] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [ocrText, setOcrText] = useState('');
+  const [showAuth, setShowAuth] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    name: '',
+    email: '',
+    phone: '',
+    organization: ''
+  });
+  const [history, setHistory] = useState<OCRResult[]>([]);
+
+  const handleFileUpload = (file: File) => {
+    setUploadedFile(file);
+    setRotation(0);
+    setOcrText('');
+    
+    // Create preview URL
+    const url = URL.createObjectURL(file);
+    setFilePreviewUrl(url);
+  };
+
+  const handleRotate = (degrees: number) => {
+    setRotation((prev) => (prev + degrees) % 360);
+  };
+
+  const handleProcessOCR = async (compress: boolean) => {
+    if (!uploadedFile) return;
+
+    setIsProcessing(true);
+    
+    // Simulate OCR processing
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Mock OCR result in Amharic
+    const mockText = `የተመለከተው ሰነድ ስም: ${uploadedFile.name}
+
+ይህ የናሙና አማርኛ ጽሑፍ ነው። በትክክለኛው አፕሊኬሽን ውስጥ፣ የእጅ ጽሑፍ ምስሎች፣ የተቃኘ ፒዲኤፍ ወይም ሌሎች ሰነዶች ወደ ሊታረም የሚችል ጽሑፍ ይቀየራሉ።
+
+የኢትዮጵያ ታሪካዊ እና ሃይማኖታዊ ጽሑፎችን ለማስቀመጥ እና ለማቆየት ይህ ቴክኖሎጂ በጣም አስፈላጊ ነው። የአማርኛ የእጅ ጽሑፍ ማንበብ ቴክኖሎጂ የቅርስ ጥበቃን ይደግፋል።
+
+${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
+
+    setOcrText(mockText);
+    setIsProcessing(false);
+
+    // Add to history if authenticated
+    if (isAuthenticated) {
+      const newResult: OCRResult = {
+        id: Date.now().toString(),
+        originalFileName: uploadedFile.name,
+        fileType: uploadedFile.type,
+        uploadDate: new Date(),
+        text: mockText,
+        fileUrl: filePreviewUrl
+      };
+      setHistory(prev => [newResult, ...prev]);
+    }
+  };
+
+  const handleLogin = (profile: UserProfile) => {
+    setIsAuthenticated(true);
+    setUserProfile(profile);
+    setShowAuth(false);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUserProfile({
+      name: '',
+      email: '',
+      phone: '',
+      organization: ''
+    });
+    setHistory([]);
+  };
+
+  const handleUpdateProfile = (profile: UserProfile) => {
+    setUserProfile(profile);
+    setShowProfile(false);
+  };
+
+  const handleLoadFromHistory = (result: OCRResult) => {
+    setOcrText(result.text);
+    setShowHistory(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-amber-50/30 via-stone-50 to-amber-50/50">
+      <Header 
+        isAuthenticated={isAuthenticated}
+        userName={userProfile.name}
+        onLoginClick={() => setShowAuth(true)}
+        onLogoutClick={handleLogout}
+        onHistoryClick={() => setShowHistory(true)}
+        onProfileClick={() => setShowProfile(true)}
+      />
+
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl mb-4 bg-gradient-to-r from-amber-800 via-amber-700 to-yellow-900 bg-clip-text text-transparent">
+            የአማርኛ የእጅ ጽሑፍ OCR
+          </h1>
+          <p className="text-lg text-amber-900/80 max-w-2xl mx-auto">
+            Preserve and digitize ancient Amharic scriptures and manuscripts
+          </p>
+          <p className="text-sm text-amber-800/60 mt-2">
+            Advanced OCR technology for historical document preservation
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className="space-y-6">
+            <UploadSection 
+              onFileUpload={handleFileUpload}
+              isProcessing={isProcessing}
+            />
+            
+            {uploadedFile && (
+              <PreviewSection
+                file={uploadedFile}
+                previewUrl={filePreviewUrl}
+                rotation={rotation}
+                onRotate={handleRotate}
+                onProcess={handleProcessOCR}
+                isProcessing={isProcessing}
+              />
+            )}
+          </div>
+
+          <div className="space-y-6">
+            {ocrText && (
+              <>
+                <EditorSection 
+                  text={ocrText}
+                  onTextChange={setOcrText}
+                />
+                
+                <DownloadSection 
+                  text={ocrText}
+                  fileName={uploadedFile?.name || 'document'}
+                />
+              </>
+            )}
+          </div>
+        </div>
+
+        {!uploadedFile && (
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <FeatureCard
+              icon={<Files className="w-12 h-12 text-amber-700" strokeWidth={1.5} />}
+              title="Multiple Formats"
+              titleAmharic="በርካታ ቅርጾች"
+              description="Upload images, scanned PDFs, or provide URLs. Preview before processing."
+            />
+            <FeatureCard
+              icon={<FileEdit className="w-12 h-12 text-amber-700" strokeWidth={1.5} />}
+              title="Edit & Export"
+              titleAmharic="አርትዕ እና ላክ"
+              description="Edit converted text and download as plain text, Word document, or PDF."
+            />
+            <FeatureCard
+              icon={<Archive className="w-12 h-12 text-amber-700" strokeWidth={1.5} />}
+              title="Archive Tracking"
+              titleAmharic="ማህደር መከታተል"
+              description="Register to save your digitization history and access previous conversions anytime."
+            />
+          </div>
+        )}
+      </main>
+
+      {showAuth && (
+        <AuthModal
+          onClose={() => setShowAuth(false)}
+          onLogin={handleLogin}
+        />
+      )}
+
+      {showHistory && (
+        <HistoryPanel
+          history={history}
+          onClose={() => setShowHistory(false)}
+          onLoadResult={handleLoadFromHistory}
+        />
+      )}
+
+      {showProfile && (
+        <ProfileModal
+          profile={userProfile}
+          onClose={() => setShowProfile(false)}
+          onUpdateProfile={handleUpdateProfile}
+          onLogout={handleLogout}
+        />
+      )}
+    </div>
+  );
+}
+
+function FeatureCard({ icon, title, titleAmharic, description }: {
+  icon: React.ReactNode;
+  title: string;
+  titleAmharic: string;
+  description: string;
+}) {
+  return (
+    <div className="bg-gradient-to-br from-white to-amber-50/30 p-6 rounded-xl shadow-md border-2 border-amber-200 hover:shadow-lg hover:border-amber-300 transition-all">
+      <div className="mb-4">{icon}</div>
+      <h3 className="mb-1 text-amber-900">{title}</h3>
+      <p className="text-sm text-amber-800/70 mb-2">{titleAmharic}</p>
+      <p className="text-sm text-amber-900/60">{description}</p>
+    </div>
+  );
+}
+
+export default App;
