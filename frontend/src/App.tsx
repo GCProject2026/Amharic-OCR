@@ -1,13 +1,15 @@
+// frontend/src/App.tsx
 import { useState } from 'react';
 import { Header } from './components/Header';
 import { UploadSection } from './components/UploadSection';
 import { PreviewSection } from './components/PreviewSection';
 import { EditorSection } from './components/EditorSection';
 import { DownloadSection } from './components/DownloadSection';
-import { AuthModal } from './components/AuthModal';
+import { AuthModal } from './components/AutoModal';
 import { HistoryPanel } from './components/HistoryPanel';
 import { ProfileModal } from './components/ProfileModal';
 import { Files, FileEdit, Archive } from 'lucide-react';
+import './index.css';
 
 export interface OCRResult {
   id: string;
@@ -119,7 +121,7 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50/30 via-stone-50 to-amber-50/50">
+    <div className="min-h-screen bg-linear-to-br from-amber-50/30 via-stone-50 to-amber-50/50">
       <Header 
         isAuthenticated={isAuthenticated}
         userName={userProfile.name}
@@ -131,7 +133,7 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
 
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl mb-4 bg-gradient-to-r from-amber-800 via-amber-700 to-yellow-900 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl mb-4 bg-linear-to-r from-amber-800 via-amber-700 to-yellow-900 bg-clip-text text-transparent">
             የአማርኛ የእጅ ጽሑፍ OCR
           </h1>
           <p className="text-lg text-amber-900/80 max-w-2xl mx-auto">
@@ -236,7 +238,7 @@ function FeatureCard({ icon, title, titleAmharic, description }: {
   description: string;
 }) {
   return (
-    <div className="bg-gradient-to-br from-white to-amber-50/30 p-6 rounded-xl shadow-md border-2 border-amber-200 hover:shadow-lg hover:border-amber-300 transition-all">
+    <div className="bg-linear-to-br from-white to-amber-50/30 p-6 rounded-xl shadow-md border-2 border-amber-200 hover:shadow-lg hover:border-amber-300 transition-all">
       <div className="mb-4">{icon}</div>
       <h3 className="mb-1 text-amber-900">{title}</h3>
       <p className="text-sm text-amber-800/70 mb-2">{titleAmharic}</p>

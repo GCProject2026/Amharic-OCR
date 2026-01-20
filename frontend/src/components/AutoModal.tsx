@@ -4,7 +4,7 @@ import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Card } from '../../ui/card';
-import { UserProfile } from '../src';
+import { UserProfile } from '../App';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -58,7 +58,7 @@ export function AuthModal({ onClose, onLogin }: AuthModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-md bg-gradient-to-br from-white to-amber-50/30 rounded-xl shadow-2xl relative animate-in fade-in zoom-in duration-200 border-2 border-amber-200">
+      <Card className="w-full max-w-md bg-linear-to-br from-white to-amber-50/30 rounded-xl shadow-2xl relative animate-in fade-in zoom-in duration-200 border-2 border-amber-200">
         <Button
           variant="ghost"
           size="sm"
@@ -70,7 +70,7 @@ export function AuthModal({ onClose, onLogin }: AuthModalProps) {
 
         <div className="p-8">
           <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-amber-800 via-amber-700 to-yellow-900 rounded-full border-2 border-amber-900/30 flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <div className="w-16 h-16 bg-linear-to-br from-amber-800 via-amber-700 to-yellow-900 rounded-full border-2 border-amber-900/30 flex items-center justify-center mx-auto mb-4 shadow-lg">
               <User className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-2xl mb-2 text-amber-900">

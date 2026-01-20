@@ -5,7 +5,7 @@ import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Card } from '../../ui/card';
 import { Separator } from '../../ui/separator';
-import { UserProfile } from '../src';
+import { UserProfile } from '../App';
 
 interface ProfileModalProps {
   profile: UserProfile;
@@ -31,7 +31,7 @@ export function ProfileModal({ profile, onClose, onUpdateProfile, onLogout }: Pr
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-lg bg-gradient-to-br from-white to-amber-50/30 rounded-xl shadow-2xl relative animate-in fade-in zoom-in duration-200 border-2 border-amber-200">
+      <Card className="w-full max-w-lg bg-linear-to-br from-white to-amber-50/30 rounded-xl shadow-2xl relative animate-in fade-in zoom-in duration-200 border-2 border-amber-200">
         <Button
           variant="ghost"
           size="sm"
@@ -43,7 +43,7 @@ export function ProfileModal({ profile, onClose, onUpdateProfile, onLogout }: Pr
 
         <div className="p-8">
           <div className="text-center mb-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-amber-800 via-amber-700 to-yellow-900 rounded-full border-2 border-amber-900/30 flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <div className="w-20 h-20 bg-linear-to-br from-amber-800 via-amber-700 to-yellow-900 rounded-full border-2 border-amber-900/30 flex items-center justify-center mx-auto mb-4 shadow-lg">
               <User className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-2xl mb-2 text-amber-900">My Profile</h2>
