@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { RotateCw, RotateCcw, Minimize2, FileText, Scan } from 'lucide-react';
-import { Button } from '../../ui/button';
-import { Card } from '../../ui/card';
-import { Checkbox } from '../../ui/checkbox';
-import { Label } from '../../ui/label';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
+import { Checkbox } from './ui/checkbox';
+import { Label } from './ui/label';
 
 interface PreviewSectionProps {
   file: File;

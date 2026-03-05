@@ -1,5 +1,5 @@
 import { User, BookOpen, LogOut, ScrollText } from 'lucide-react';
-import { Button } from '../../ui/button';
+import { Button } from './ui/button';
 
 interface HeaderProps {
   isAuthenticated: boolean;

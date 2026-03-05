@@ -1,6 +1,6 @@
 import { Archive, FileText, BookOpen, Scroll } from 'lucide-react';
-import { Button } from '../../ui/button';
-import { Card } from '../../ui/card';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
 
 interface DownloadSectionProps {
   text: string;
