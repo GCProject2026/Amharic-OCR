@@ -1,31 +1,34 @@
-// frontend/src/App.tsx
 import { useState } from 'react';
+import { Files, FileEdit, Archive } from 'lucide-react';
+import { Toaster, toast } from 'sonner@2.0.3';
 import { Header } from './components/Header';
 import { UploadSection } from './components/UploadSection';
 import { PreviewSection } from './components/PreviewSection';
 import { EditorSection } from './components/EditorSection';
 import { DownloadSection } from './components/DownloadSection';
-import { AuthModal } from './components/AutoModal';
+import { AuthModal } from './components/AuthModal';
 import { HistoryPanel } from './components/HistoryPanel';
 import { ProfileModal } from './components/ProfileModal';
-import { Files, FileEdit, Archive } from 'lucide-react';
-import './index.css';
+import { UpgradeModal } from './components/UpgradeModal';
 
-export interface OCRResult {
+interface UserProfile {
+  name: string;
+  email: string;
+  phone?: string;
+  organization?: string;
+  isPremium?: boolean;
+}
+
+interface OCRResult {
   id: string;
   originalFileName: string;
   fileType: string;
   uploadDate: Date;
   text: string;
-  fileUrl?: string;
+  fileUrl: string;
 }
 
-export interface UserProfile {
-  name: string;
-  email: string;
-  phone?: string;
-  organization?: string;
-}
+const FREE_DAILY_LIMIT = 5;
 
 function App() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -37,11 +40,14 @@ function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [dailyUsage, setDailyUsage] = useState(0);
   const [userProfile, setUserProfile] = useState<UserProfile>({
     name: '',
     email: '',
     phone: '',
-    organization: ''
+    organization: '',
+    isPremium: false
   });
   const [history, setHistory] = useState<OCRResult[]>([]);
 
@@ -55,11 +61,35 @@ function App() {
     setFilePreviewUrl(url);
   };
 
+  const handleVoiceInput = (text: string) => {
+    // Check usage limits for non-premium users
+    if (!userProfile.isPremium && dailyUsage >= FREE_DAILY_LIMIT) {
+      toast.error('Daily limit reached. Upgrade to Premium for unlimited conversions!');
+      setShowUpgrade(true);
+      return;
+    }
+
+    // Voice input sets the text directly without needing file upload
+    setOcrText(text);
+    
+    // Increment usage counter
+    setDailyUsage(prev => prev + 1);
+    
+    toast.success('Voice input processed successfully');
+  };
+
   const handleRotate = (degrees: number) => {
     setRotation((prev) => (prev + degrees) % 360);
   };
 
   const handleProcessOCR = async (compress: boolean) => {
+    // Check usage limits for non-premium users
+    if (!userProfile.isPremium && dailyUsage >= FREE_DAILY_LIMIT) {
+      toast.error('Daily limit reached. Upgrade to Premium for unlimited conversions!');
+      setShowUpgrade(true);
+      return;
+    }
+
     if (!uploadedFile) return;
 
     setIsProcessing(true);
@@ -79,6 +109,11 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
     setOcrText(mockText);
     setIsProcessing(false);
 
+    // Increment usage counter
+    setDailyUsage(prev => prev + 1);
+
+    toast.success('Document processed successfully!');
+
     // Add to history if authenticated
     if (isAuthenticated) {
       const newResult: OCRResult = {
@@ -97,6 +132,7 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
     setIsAuthenticated(true);
     setUserProfile(profile);
     setShowAuth(false);
+    toast.success(`Welcome back, ${profile.name}!`);
   };
 
   const handleLogout = () => {
@@ -105,23 +141,38 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
       name: '',
       email: '',
       phone: '',
-      organization: ''
+      organization: '',
+      isPremium: false
     });
     setHistory([]);
+    setDailyUsage(0);
+    toast.info('You have been logged out');
   };
 
   const handleUpdateProfile = (profile: UserProfile) => {
     setUserProfile(profile);
     setShowProfile(false);
+    toast.success('Profile updated successfully');
   };
 
   const handleLoadFromHistory = (result: OCRResult) => {
     setOcrText(result.text);
     setShowHistory(false);
+    toast.success('Loaded from history');
   };
 
+  const handleUpgrade = () => {
+    // Simulate upgrade process
+    setUserProfile(prev => ({ ...prev, isPremium: true }));
+    setShowUpgrade(false);
+    toast.success('🎉 Congratulations! You are now a Premium member!');
+  };
+
+  const canUseVoiceInput = true; // Voice input available for all users, just counts toward daily limit
+
   return (
-    <div className="min-h-screen bg-linear-to-br from-amber-50/30 via-stone-50 to-amber-50/50">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50/30 via-stone-50 to-amber-50/50">
+      <Toaster position="top-right" richColors />
       <Header 
         isAuthenticated={isAuthenticated}
         userName={userProfile.name}
@@ -133,7 +184,7 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
 
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl mb-4 bg-linear-to-r from-amber-800 via-amber-700 to-yellow-900 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl mb-4 bg-gradient-to-r from-amber-800 via-amber-700 to-yellow-900 bg-clip-text text-transparent">
             የአማርኛ የእጅ ጽሑፍ OCR
           </h1>
           <p className="text-lg text-amber-900/80 max-w-2xl mx-auto">
@@ -142,12 +193,35 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
           <p className="text-sm text-amber-800/60 mt-2">
             Advanced OCR technology for historical document preservation
           </p>
+          
+          {/* Usage Counter */}
+          {!userProfile.isPremium && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-100 border border-amber-300 rounded-full text-sm text-amber-900">
+              <span>
+                Daily usage: {dailyUsage} / {FREE_DAILY_LIMIT}
+              </span>
+              <button
+                onClick={() => setShowUpgrade(true)}
+                className="text-amber-800 hover:text-amber-900 underline font-medium"
+              >
+                Upgrade for unlimited
+              </button>
+            </div>
+          )}
+          
+          {userProfile.isPremium && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 rounded-full text-sm text-white">
+              <span className="text-yellow-300">👑</span>
+              <span>Premium Member - Unlimited Access</span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <div className="space-y-6">
             <UploadSection 
               onFileUpload={handleFileUpload}
+              onVoiceInput={canUseVoiceInput ? handleVoiceInput : undefined}
               isProcessing={isProcessing}
             />
             
@@ -227,6 +301,15 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
           onLogout={handleLogout}
         />
       )}
+
+      {showUpgrade && (
+        <UpgradeModal
+          onClose={() => setShowUpgrade(false)}
+          onUpgrade={handleUpgrade}
+          currentUsage={dailyUsage}
+          maxFreeUsage={FREE_DAILY_LIMIT}
+        />
+      )}
     </div>
   );
 }
@@ -238,7 +321,7 @@ function FeatureCard({ icon, title, titleAmharic, description }: {
   description: string;
 }) {
   return (
-    <div className="bg-linear-to-br from-white to-amber-50/30 p-6 rounded-xl shadow-md border-2 border-amber-200 hover:shadow-lg hover:border-amber-300 transition-all">
+    <div className="bg-gradient-to-br from-white to-amber-50/30 p-6 rounded-xl shadow-md border-2 border-amber-200 hover:shadow-lg hover:border-amber-300 transition-all">
       <div className="mb-4">{icon}</div>
       <h3 className="mb-1 text-amber-900">{title}</h3>
       <p className="text-sm text-amber-800/70 mb-2">{titleAmharic}</p>
