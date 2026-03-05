@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { X, User, Mail, Phone, Building, LogOut, Save } from 'lucide-react';
-import { Button } from '../../ui/button';
-import { Input } from '../../ui/input';
-import { Label } from '../../ui/label';
-import { Card } from '../../ui/card';
-import { Separator } from '../../ui/separator';
+import { X, User, Mail, Phone, Building, LogOut, Save, Crown } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Card } from './ui/card';
+import { Separator } from './ui/separator';
 import { UserProfile } from '../App';
 
 interface ProfileModalProps {
@@ -31,7 +31,7 @@ export function ProfileModal({ profile, onClose, onUpdateProfile, onLogout }: Pr
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-lg bg-linear-to-br from-white to-amber-50/30 rounded-xl shadow-2xl relative animate-in fade-in zoom-in duration-200 border-2 border-amber-200">
+      <Card className="w-full max-w-lg bg-gradient-to-br from-white to-amber-50/30 rounded-xl shadow-2xl relative animate-in fade-in zoom-in duration-200 border-2 border-amber-200">
         <Button
           variant="ghost"
           size="sm"
@@ -43,11 +43,19 @@ export function ProfileModal({ profile, onClose, onUpdateProfile, onLogout }: Pr
 
         <div className="p-8">
           <div className="text-center mb-6">
-            <div className="w-20 h-20 bg-linear-to-br from-amber-800 via-amber-700 to-yellow-900 rounded-full border-2 border-amber-900/30 flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-800 via-amber-700 to-yellow-900 rounded-full border-2 border-amber-900/30 flex items-center justify-center mx-auto mb-4 shadow-lg">
               <User className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-2xl mb-2 text-amber-900">My Profile</h2>
             <p className="text-sm text-amber-800/70">Manage your account information</p>
+            
+            {/* Premium Badge */}
+            {profile.isPremium && (
+              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-amber-700 rounded-full text-sm text-white">
+                <Crown className="w-4 h-4 text-yellow-300" />
+                <span>Premium Member</span>
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -147,6 +155,23 @@ export function ProfileModal({ profile, onClose, onUpdateProfile, onLogout }: Pr
           <Separator className="my-6" />
 
           <div className="space-y-3">
+            {/* Account Status */}
+            {!profile.isPremium && (
+              <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border-2 border-amber-300">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="text-sm text-amber-900 mb-1 flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-amber-700" />
+                      <span className="font-medium">Upgrade to Premium</span>
+                    </div>
+                    <p className="text-xs text-amber-800/70">
+                      Get unlimited conversions, voice input, and more!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
               <div className="text-sm text-amber-900/70 mb-2">Account Actions</div>
               <Button

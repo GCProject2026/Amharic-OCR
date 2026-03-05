@@ -1,16 +1,18 @@
 import { useState, useRef } from 'react';
-import { Upload, FileText, Image as ImageIcon, Link as LinkIcon, BookOpen } from 'lucide-react';
-import { Button } from '../../ui/button';
-import { Input } from '../../ui/input';
-import { Card } from '../../ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
+import { Upload, FileText, Image as ImageIcon, Link as LinkIcon, BookOpen, Mic } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Card } from './ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { VoiceRecordingSection } from './VoiceRecordingSection';
 
 interface UploadSectionProps {
   onFileUpload: (file: File) => void;
+  onVoiceInput?: (text: string) => void;
   isProcessing: boolean;
 }
 
-export function UploadSection({ onFileUpload, isProcessing }: UploadSectionProps) {
+export function UploadSection({ onFileUpload, onVoiceInput, isProcessing }: UploadSectionProps) {
   const [dragActive, setDragActive] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,7 +70,7 @@ export function UploadSection({ onFileUpload, isProcessing }: UploadSectionProps
       </div>
       
       <Tabs defaultValue="file" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4 bg-amber-100 border border-amber-300">
+        <TabsList className="grid w-full grid-cols-3 mb-4 bg-amber-100 border border-amber-300">
           <TabsTrigger value="file" className="data-[state=active]:bg-white data-[state=active]:text-amber-900">
             <FileText className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">File Upload</span>
@@ -77,6 +79,11 @@ export function UploadSection({ onFileUpload, isProcessing }: UploadSectionProps
           <TabsTrigger value="url" className="data-[state=active]:bg-white data-[state=active]:text-amber-900">
             <LinkIcon className="w-4 h-4 mr-2" />
             URL
+          </TabsTrigger>
+          <TabsTrigger value="voice" className="data-[state=active]:bg-white data-[state=active]:text-amber-900">
+            <Mic className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Voice</span>
+            <span className="sm:hidden">Mic</span>
           </TabsTrigger>
         </TabsList>
 
@@ -144,6 +151,19 @@ export function UploadSection({ onFileUpload, isProcessing }: UploadSectionProps
               Load from URL
             </Button>
           </div>
+        </TabsContent>
+
+        <TabsContent value="voice">
+          {onVoiceInput ? (
+            <VoiceRecordingSection 
+              onVoiceText={onVoiceInput}
+              isProcessing={isProcessing}
+            />
+          ) : (
+            <div className="text-center py-8 text-amber-800/70">
+              Voice input is available for premium users
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </Card>

@@ -1,7 +1,7 @@
 import { X, BookMarked, Calendar, Archive } from 'lucide-react';
-import { Button } from '../../ui/button';
-import { Card } from '../../ui/card';
-import { OCRResult } from '../src';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
+import { OCRResult } from '../App';
 
 interface HistoryPanelProps {
   history: OCRResult[];
