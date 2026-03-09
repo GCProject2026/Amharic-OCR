@@ -42,13 +42,16 @@
     "react-hook-form": "^7.55.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.2",
-    "sonner": "^2.0.3",
+    "sonner": "^2.0.7",
     "tailwind-merge": "*",
     "vaul": "^1.1.2"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react-swc": "^3.10.2",
+    "typescript": "^5.9.3",
     "vite": "6.3.5"
   },
   "scripts": {
