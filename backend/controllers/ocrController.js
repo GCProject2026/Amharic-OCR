@@ -1,4 +1,5 @@
 const OcrRecord = require('../models/OcrRecord');
+const cloudinary = require('../config/cloudinary');
 
 const uploadAndProcessImage = async (req, res) => {
     console.log("--- 📥 New OCR Upload Request ---");
@@ -15,12 +16,25 @@ const uploadAndProcessImage = async (req, res) => {
         }
 
         console.log("✅ File caught by Multer:", req.file.originalname);
-        console.log("☁️ Cloudinary URL:", req.file.path);
+
+        // Upload to Cloudinary
+        const uploadResult = await new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+                { folder: 'amharic_ocr_project', allowed_formats: ['jpg', 'png', 'jpeg'] },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
+            stream.end(req.file.buffer);
+        });
+
+        console.log("☁️ Cloudinary Upload Success:", uploadResult.secure_url);
 
         // 1. Create the record in MongoDB
         const newRecord = new OcrRecord({
-            imageUrl: req.file.path,
-            publicId: req.file.filename,
+            imageUrl: uploadResult.secure_url,
+            publicId: uploadResult.public_id,
             originalName: req.file.originalname,
             status: 'pending'
         });
