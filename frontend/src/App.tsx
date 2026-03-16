@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Files, FileEdit, Archive } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
+ fatuma-auth
+
+import axios from 'axios';
+ main
 import { Header } from './components/Header';
 import { UploadSection } from './components/UploadSection';
 import { PreviewSection } from './components/PreviewSection';
@@ -51,14 +55,44 @@ function App() {
   });
   const [history, setHistory] = useState<OCRResult[]>([]);
 
-  const handleFileUpload = (file: File) => {
-    setUploadedFile(file);
-    setRotation(0);
-    setOcrText('');
+  const handleFileUpload = async (file: File) => {
+    setIsProcessing(true);
     
-    // Create preview URL
-    const url = URL.createObjectURL(file);
-    setFilePreviewUrl(url);
+    try {
+      // Create FormData to send the file
+      const formData = new FormData();
+      formData.append('image', file);
+
+      // Upload to backend
+      const response = await axios.post('http://localhost:5000/api/ocr/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.success) {
+        setUploadedFile(file);
+        setRotation(0);
+        setOcrText('');
+        
+        // Create preview URL
+        const url = URL.createObjectURL(file);
+        setFilePreviewUrl(url);
+        
+        toast.success('File uploaded successfully!');
+      } else {
+        toast.error('Upload failed: ' + response.data.message);
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      if (error.response) {
+        toast.error('Upload failed: ' + (error.response.data.message || 'Server error'));
+      } else {
+        toast.error('Upload failed: Network error');
+      }
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleVoiceInput = (text: string) => {
@@ -90,15 +124,19 @@ function App() {
       return;
     }
 
-    if (!uploadedFile) return;
+    if (!uploadedFile) {
+      toast.error('Please upload a file first.');
+      return;
+    }
 
     setIsProcessing(true);
     
-    // Simulate OCR processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Mock OCR result in Amharic
-    const mockText = `የተመለከተው ሰነድ ስም: ${uploadedFile.name}
+    try {
+      // For now, we'll simulate OCR processing since the backend doesn't have OCR implemented yet
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Mock OCR result in Amharic
+      const mockText = `የተመለከተው ሰነድ ስም: ${uploadedFile.name}
 
 ይህ የናሙና አማርኛ ጽሑፍ ነው። በትክክለኛው አፕሊኬሽን ውስጥ፣ የእጅ ጽሑፍ ምስሎች፣ የተቃኘ ፒዲኤፍ ወይም ሌሎች ሰነዶች ወደ ሊታረም የሚችል ጽሑፍ ይቀየራሉ።
 
@@ -106,25 +144,30 @@ function App() {
 
 ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
 
-    setOcrText(mockText);
-    setIsProcessing(false);
+      setOcrText(mockText);
 
-    // Increment usage counter
-    setDailyUsage(prev => prev + 1);
+      // Increment usage counter
+      setDailyUsage(prev => prev + 1);
 
-    toast.success('Document processed successfully!');
+      toast.success('Document processed successfully!');
 
-    // Add to history if authenticated
-    if (isAuthenticated) {
-      const newResult: OCRResult = {
-        id: Date.now().toString(),
-        originalFileName: uploadedFile.name,
-        fileType: uploadedFile.type,
-        uploadDate: new Date(),
-        text: mockText,
-        fileUrl: filePreviewUrl
-      };
-      setHistory(prev => [newResult, ...prev]);
+      // Add to history if authenticated
+      if (isAuthenticated) {
+        const newResult: OCRResult = {
+          id: Date.now().toString(),
+          originalFileName: uploadedFile.name,
+          fileType: uploadedFile.type,
+          uploadDate: new Date(),
+          text: mockText,
+          fileUrl: filePreviewUrl
+        };
+        setHistory(prev => [newResult, ...prev]);
+      }
+    } catch (error) {
+      console.error('OCR processing error:', error);
+      toast.error('OCR processing failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
