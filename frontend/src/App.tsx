@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Files, FileEdit, Archive } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
+ fatuma-auth
+
 import axios from 'axios';
+ main
 import { Header } from './components/Header';
 import { UploadSection } from './components/UploadSection';
 import { PreviewSection } from './components/PreviewSection';
@@ -12,7 +15,7 @@ import { HistoryPanel } from './components/HistoryPanel';
 import { ProfileModal } from './components/ProfileModal';
 import { UpgradeModal } from './components/UpgradeModal';
 
-interface UserProfile {
+export interface UserProfile {
   name: string;
   email: string;
   phone?: string;
@@ -176,18 +179,21 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUserProfile({
-      name: '',
-      email: '',
-      phone: '',
-      organization: '',
-      isPremium: false
-    });
-    setHistory([]);
-    setDailyUsage(0);
-    toast.info('You have been logged out');
-  };
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+
+  setIsAuthenticated(false);
+  setUserProfile({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    isPremium: false
+  });
+  setHistory([]);
+  setDailyUsage(0);
+  toast.info('You have been logged out');
+};
 
   const handleUpdateProfile = (profile: UserProfile) => {
     setUserProfile(profile);
