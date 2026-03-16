@@ -136,18 +136,21 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUserProfile({
-      name: '',
-      email: '',
-      phone: '',
-      organization: '',
-      isPremium: false
-    });
-    setHistory([]);
-    setDailyUsage(0);
-    toast.info('You have been logged out');
-  };
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+
+  setIsAuthenticated(false);
+  setUserProfile({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    isPremium: false
+  });
+  setHistory([]);
+  setDailyUsage(0);
+  toast.info('You have been logged out');
+};
 
   const handleUpdateProfile = (profile: UserProfile) => {
     setUserProfile(profile);
