@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { storage } = require('../config/cloudinary');
 const { uploadAndProcessImage } = require('../controllers/ocrController');
 
-const upload = multer({ storage: storage }).single('image');
+const upload = multer({ storage: multer.memoryStorage() }).single('image');
 
 router.post('/upload', (req, res, next) => {
     upload(req, res, function (err) {
