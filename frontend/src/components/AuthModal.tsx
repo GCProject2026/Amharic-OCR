@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card } from './ui/card';
-import { UserProfile } from '../App';
+import { UserProfile } from './App';
 
 interface AuthModalProps {
   onClose: () => void;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Files, FileEdit, Archive } from 'lucide-react';
-import { Toaster, toast } from 'sonner@2.0.3';
+import { Toaster, toast } from 'sonner';
 import { Header } from './components/Header';
 import { UploadSection } from './components/UploadSection';
 import { PreviewSection } from './components/PreviewSection';
