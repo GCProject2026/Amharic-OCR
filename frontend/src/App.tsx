@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { Files, FileEdit, Archive } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-
 import axios from 'axios';
-
 
 import { Header } from './components/Header';
 import { UploadSection } from './components/UploadSection';
@@ -73,7 +71,9 @@ function App() {
       if (response.data.success) {
         setUploadedFile(file);
         setRotation(0);
-        setOcrText('');
+        
+        // Don't clear ocrText when uploading a new file
+        // setOcrText('');  <-- COMMENT THIS OUT
         
         // Create preview URL
         const url = URL.createObjectURL(file);
@@ -96,6 +96,8 @@ function App() {
   };
 
   const handleVoiceInput = (text: string) => {
+    console.log("🎯 VOICE INPUT RECEIVED IN APP:", text.substring(0, 100));
+    
     // Check usage limits for non-premium users
     if (!userProfile.isPremium && dailyUsage >= FREE_DAILY_LIMIT) {
       toast.error('Daily limit reached. Upgrade to Premium for unlimited conversions!');
@@ -103,13 +105,13 @@ function App() {
       return;
     }
 
-    // Voice input sets the text directly without needing file upload
+    // Voice input sets the text directly
     setOcrText(text);
     
     // Increment usage counter
     setDailyUsage(prev => prev + 1);
     
-    toast.success('Voice input processed successfully');
+    toast.success('Voice input processed successfully with Hasab AI!');
   };
 
   const handleRotate = (degrees: number) => {
@@ -135,8 +137,12 @@ function App() {
       // For now, we'll simulate OCR processing since the backend doesn't have OCR implemented yet
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Mock OCR result in Amharic
-      const mockText = `የተመለከተው ሰነድ ስም: ${uploadedFile.name}
+      // 🟢 IMPORTANT: Only use mock text if there's no existing text from voice input
+      if (!ocrText) {
+        console.log("📝 No existing text, using mock OCR result");
+        
+        // Mock OCR result in Amharic
+        const mockText = `የተመለከተው ሰነድ ስም: ${uploadedFile.name}
 
 ይህ የናሙና አማርኛ ጽሑፍ ነው። በትክክለኛው አፕሊኬሽን ውስጥ፣ የእጅ ጽሑፍ ምስሎች፣ የተቃኘ ፒዲኤፍ ወይም ሌሎች ሰነዶች ወደ ሊታረም የሚችል ጽሑፍ ይቀየራሉ።
 
@@ -144,7 +150,11 @@ function App() {
 
 ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
 
-      setOcrText(mockText);
+        setOcrText(mockText);
+      } else {
+        console.log("📝 Using existing text from voice input, not overwriting with mock");
+        toast.info('Using your voice input text');
+      }
 
       // Increment usage counter
       setDailyUsage(prev => prev + 1);
@@ -158,7 +168,7 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
           originalFileName: uploadedFile.name,
           fileType: uploadedFile.type,
           uploadDate: new Date(),
-          text: mockText,
+          text: ocrText, // Use the current text (could be from voice or mock)
           fileUrl: filePreviewUrl
         };
         setHistory(prev => [newResult, ...prev]);
@@ -179,21 +189,21 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
   };
 
   const handleLogout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
 
-  setIsAuthenticated(false);
-  setUserProfile({
-    name: '',
-    email: '',
-    phone: '',
-    organization: '',
-    isPremium: false
-  });
-  setHistory([]);
-  setDailyUsage(0);
-  toast.info('You have been logged out');
-};
+    setIsAuthenticated(false);
+    setUserProfile({
+      name: '',
+      email: '',
+      phone: '',
+      organization: '',
+      isPremium: false
+    });
+    setHistory([]);
+    setDailyUsage(0);
+    toast.info('You have been logged out');
+  };
 
   const handleUpdateProfile = (profile: UserProfile) => {
     setUserProfile(profile);
@@ -300,7 +310,7 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
           </div>
         </div>
 
-        {!uploadedFile && (
+        {!uploadedFile && !ocrText && (
           <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureCard
               icon={<Files className="w-12 h-12 text-amber-700" strokeWidth={1.5} />}

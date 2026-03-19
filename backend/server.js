@@ -20,6 +20,14 @@ app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" })); 
 app.use(morgan("dev"));
 
+// Add this after your middleware
+app.use((req, res, next) => {
+  console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log('Headers:', req.headers['content-type']);
+  console.log('Origin:', req.headers.origin);
+  next();
+});
+
 // Routes
 app.get("/", (req, res) => {
   res.send("OCR Backend Running ✅");
