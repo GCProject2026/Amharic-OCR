@@ -1,0 +1,14 @@
+# Ignore the virtual environment
+.venv/
+venv/
+
+# Ignore the heavy AI models
+ai_service/models/*.h5
+
+# Ignore processed/uploaded images
+ai_service/uploads/*.png
+ai_service/uploads/*.jpg
+ai_service/uploads/*.jpeg
+
+# Ignore node modules
+node_modules/
