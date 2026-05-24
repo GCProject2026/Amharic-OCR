@@ -5,6 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card } from './ui/card';
 import { UserProfile } from '../App';
+import axios from 'axios';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -14,12 +15,19 @@ interface AuthModalProps {
 export function AuthModal({ onClose, onLogin }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [resetEmailSent, setResetEmailSent] = useState(false);
+
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
   const [emailReady, setEmailReady] = useState(false);
   const [passwordReady, setPasswordReady] = useState(false);
 
@@ -27,9 +35,12 @@ export function AuthModal({ onClose, onLogin }: AuthModalProps) {
     setName('');
     setEmail('');
     setPassword('');
+    setOtp('');
+    setNewPassword('');
     setError('');
+    setSuccess('');
     setIsForgotPassword(false);
-    setResetEmailSent(false);
+    setOtpSent(false);
     setLoading(false);
     setEmailReady(false);
     setPasswordReady(false);
@@ -44,15 +55,69 @@ export function AuthModal({ onClose, onLogin }: AuthModalProps) {
     onClose();
   };
 
+  const handleSendOtp = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      setSuccess('');
+
+      const response = await axios.post(
+        'http://localhost:5000/api/auth/forgot-password',
+        { email }
+      );
+
+      if (response.data.success) {
+        setOtpSent(true);
+        setSuccess('OTP sent to your email. Please check your inbox.');
+      }
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      setSuccess('');
+
+      const response = await axios.post(
+        'http://localhost:5000/api/auth/reset-password',
+        {
+          email,
+          otp,
+          newPassword,
+        }
+      );
+
+      if (response.data.success) {
+        setSuccess('Password reset successful. You can now sign in.');
+
+        setTimeout(() => {
+          resetForm();
+          setIsLogin(true);
+        }, 2000);
+      }
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Failed to reset password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
     if (isForgotPassword) {
-      setResetEmailSent(true);
-      setTimeout(() => {
-        resetForm();
-      }, 3000);
+      if (!otpSent) {
+        await handleSendOtp();
+      } else {
+        await handleResetPassword();
+      }
       return;
     }
 
@@ -89,14 +154,18 @@ export function AuthModal({ onClose, onLogin }: AuthModalProps) {
 
       localStorage.setItem('token', data.token);
 
-      const profileResponse = await fetch('http://localhost:5000/api/auth/profile', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${data.token}`,
-        },
-      });
+      const profileResponse = await fetch(
+        'http://localhost:5000/api/auth/profile',
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+          },
+        }
+      );
 
       const profileData = await profileResponse.json();
+      const user = profileData.user || profileData;
 
       if (!profileResponse.ok) {
         setError(profileData.message || 'Failed to fetch profile');
@@ -104,10 +173,17 @@ export function AuthModal({ onClose, onLogin }: AuthModalProps) {
       }
 
       onLogin({
-        name: profileData.name || profileData.fullName || name || email.split('@')[0],
-        email: profileData.email || email,
-        phone: profileData.phone || '',
-        organization: profileData.organization || '',
+        name:
+          user.name ||
+          user.fullName ||
+          user.fullname ||
+          user.displayName ||
+          name ||
+          email.split('@')[0],
+        email: user.email || email,
+        phone: user.phone || user.phoneNumber || '',
+        organization: user.organization || '',
+        isPremium: user.isPremium || false,
       });
 
       resetForm();
@@ -147,125 +223,140 @@ export function AuthModal({ onClose, onLogin }: AuthModalProps) {
 
             <p className="text-sm text-amber-800/70">
               {isForgotPassword
-                ? 'Enter your email to receive password reset instructions'
+                ? otpSent
+                  ? 'Enter the OTP sent to your email and create a new password'
+                  : 'Enter your email to receive an OTP'
                 : isLogin
                   ? 'Sign in to access your OCR history'
                   : 'Register to save your OCR history'}
             </p>
           </div>
 
-          {resetEmailSent ? (
-            <div className="p-6 bg-amber-50 border-2 border-amber-300 rounded-lg text-center">
-              <div className="text-amber-800 mb-2">✓ Email Sent!</div>
-              <p className="text-sm text-amber-900/70">
-                Check your email for password reset instructions.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
-              {/* Decoy fields to reduce Chrome autofilling the real fields on modal open */}
-              <input
-                type="text"
-                name="fake-username"
-                autoComplete="username"
-                tabIndex={-1}
-                aria-hidden="true"
-                className="hidden"
-              />
-              <input
-                type="password"
-                name="fake-password"
-                autoComplete="current-password"
-                tabIndex={-1}
-                aria-hidden="true"
-                className="hidden"
-              />
-
-              {!isLogin && !isForgotPassword && (
-                <div>
-                  <Label htmlFor="name">Full Name</Label>
-                  <div className="relative mt-1">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      id="name"
-                      name="fullName"
-                      type="text"
-                      autoComplete="name"
-                      placeholder="Enter your name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="pl-10"
-                      required={!isLogin}
-                    />
-                  </div>
-                </div>
-              )}
-
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
+            {!isLogin && !isForgotPassword && (
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="name">Full Name</Label>
                 <div className="relative mt-1">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
-                    id="email"
-                    name={isLogin ? 'login-email' : 'register-email'}
-                    type="email"
-                    autoComplete={isLogin ? 'username' : 'off'}
-                    placeholder="Enter your email"
-                    value={email}
-                    readOnly={!emailReady}
-                    onFocus={() => setEmailReady(true)}
-                    onClick={() => setEmailReady(true)}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="name"
+                    name="fullName"
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Enter your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="pl-10"
+                    required={!isLogin}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <div className="relative mt-1">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="email"
+                  name={isLogin ? 'login-email' : 'register-email'}
+                  type="email"
+                  autoComplete={isLogin ? 'username' : 'off'}
+                  placeholder="Enter your email"
+                  value={email}
+                  readOnly={!emailReady || otpSent}
+                  onFocus={() => setEmailReady(true)}
+                  onClick={() => setEmailReady(true)}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+
+            {!isForgotPassword && (
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <div className="relative mt-1">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="password"
+                    name={isLogin ? 'login-password' : 'new-password'}
+                    type="password"
+                    autoComplete={isLogin ? 'current-password' : 'new-password'}
+                    placeholder="Enter your password"
+                    value={password}
+                    readOnly={!passwordReady}
+                    onFocus={() => setPasswordReady(true)}
+                    onClick={() => setPasswordReady(true)}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="pl-10"
                     required
                   />
                 </div>
               </div>
+            )}
 
-              {!isForgotPassword && (
+            {isForgotPassword && otpSent && (
+              <>
                 <div>
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="otp">OTP Code</Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    placeholder="Enter 6-digit OTP"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="newPassword">New Password</Label>
                   <div className="relative mt-1">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
-                      id="password"
-                      name={isLogin ? 'login-password' : 'new-password'}
+                      id="newPassword"
                       type="password"
-                      autoComplete={isLogin ? 'current-password' : 'new-password'}
-                      placeholder="Enter your password"
-                      value={password}
-                      readOnly={!passwordReady}
-                      onFocus={() => setPasswordReady(true)}
-                      onClick={() => setPasswordReady(true)}
-                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
                       className="pl-10"
                       required
                     />
                   </div>
                 </div>
-              )}
+              </>
+            )}
 
-              {error && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
-                  {error}
-                </div>
-              )}
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
+                {error}
+              </div>
+            )}
 
-              <Button
-                type="submit"
-                className="w-full bg-amber-800 hover:bg-amber-900 text-white"
-                disabled={loading}
-              >
-                {loading
-                  ? 'Please wait...'
-                  : isForgotPassword
-                    ? 'Send Reset Link'
-                    : isLogin
-                      ? 'Sign In'
-                      : 'Create Account'}
-              </Button>
-            </form>
-          )}
+            {success && (
+              <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-2">
+                {success}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full bg-amber-800 hover:bg-amber-900 text-white"
+              disabled={loading}
+            >
+              {loading
+                ? 'Please wait...'
+                : isForgotPassword
+                  ? otpSent
+                    ? 'Reset Password'
+                    : 'Send OTP'
+                  : isLogin
+                    ? 'Sign In'
+                    : 'Create Account'}
+            </Button>
+          </form>
 
           <div className="mt-6 text-center space-y-2">
             {!isForgotPassword && (
@@ -288,6 +379,7 @@ export function AuthModal({ onClose, onLogin }: AuthModalProps) {
                 type="button"
                 onClick={() => {
                   setError('');
+                  setSuccess('');
                   setIsForgotPassword(true);
                 }}
                 className="text-sm text-gray-600 hover:text-blue-600 hover:underline block w-full"
