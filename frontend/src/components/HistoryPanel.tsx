@@ -82,14 +82,14 @@ export function HistoryPanel({ history, onClose, onLoadResult }: HistoryPanelPro
                     </div>
 
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // In a real app, this would delete the history item
-                        alert('Delete history item');
-                      }}
-                      className="flex-shrink-0 text-amber-900 hover:bg-amber-100"
+                       variant="ghost"
+                       size="sm"
+                       onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                       e.stopPropagation();
+                      // In a real app, this would delete the history item
+                       alert('Delete history item');
+                       }}
+                       className="flex-shrink-0 text-amber-900 hover:bg-amber-100"
                     >
                       <Archive className="w-4 h-4" />
                     </Button>

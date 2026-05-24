@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Files, FileEdit, Archive } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import axios from 'axios';
@@ -21,7 +21,7 @@ export interface UserProfile {
   isPremium?: boolean;
 }
 
-interface OCRResult {
+export interface OCRResult {
   id: string;
   originalFileName: string;
   fileType: string;
@@ -44,49 +44,102 @@ function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [dailyUsage, setDailyUsage] = useState(0);
+
   const [userProfile, setUserProfile] = useState<UserProfile>({
     name: '',
     email: '',
     phone: '',
     organization: '',
-    isPremium: false
+    isPremium: false,
   });
+
   const [history, setHistory] = useState<OCRResult[]>([]);
+
+ useEffect(() => {
+  const token = localStorage.getItem('token');
+
+  if (!token) return;
+
+  const loadProfile = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/profile', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const profileData = await response.json();
+
+      if (!response.ok) {
+        localStorage.removeItem('token');
+        setIsAuthenticated(false);
+        return;
+      }
+
+      const user = profileData.user || profileData;
+
+      setUserProfile({
+        name:
+          user.name ||
+          user.fullName ||
+          user.fullname ||
+          user.displayName ||
+          user.email?.split('@')[0] ||
+          '',
+        email: user.email || '',
+        phone: user.phone || user.phoneNumber || '',
+        organization: user.organization || '',
+        isPremium: user.isPremium || false,
+      });
+
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error('Failed to restore session:', error);
+      localStorage.removeItem('token');
+      setIsAuthenticated(false);
+    }
+  };
+
+  loadProfile();
+}, []);
 
   const handleFileUpload = async (file: File) => {
     setIsProcessing(true);
-    
+
     try {
-      // Create FormData to send the file
       const formData = new FormData();
       formData.append('image', file);
 
-      // Upload to backend
-      const response = await axios.post('http://localhost:5000/api/ocr/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post(
+        'http://localhost:5000/api/ocr/upload',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
 
       if (response.data.success) {
         setUploadedFile(file);
         setRotation(0);
-        
-        // Don't clear ocrText when uploading a new file
-        // setOcrText('');  <-- COMMENT THIS OUT
-        
-        // Create preview URL
+
         const url = URL.createObjectURL(file);
         setFilePreviewUrl(url);
-        
+
         toast.success('File uploaded successfully!');
       } else {
         toast.error('Upload failed: ' + response.data.message);
       }
     } catch (error: any) {
       console.error('Upload error:', error);
+
       if (error.response) {
-        toast.error('Upload failed: ' + (error.response.data.message || 'Server error'));
+        toast.error(
+          'Upload failed: ' +
+            (error.response.data.message || 'Server error')
+        );
       } else {
         toast.error('Upload failed: Network error');
       }
@@ -96,21 +149,17 @@ function App() {
   };
 
   const handleVoiceInput = (text: string) => {
-    console.log("🎯 VOICE INPUT RECEIVED IN APP:", text.substring(0, 100));
-    
-    // Check usage limits for non-premium users
+    console.log('🎯 VOICE INPUT RECEIVED IN APP:', text.substring(0, 100));
+
     if (!userProfile.isPremium && dailyUsage >= FREE_DAILY_LIMIT) {
       toast.error('Daily limit reached. Upgrade to Premium for unlimited conversions!');
       setShowUpgrade(true);
       return;
     }
 
-    // Voice input sets the text directly
     setOcrText(text);
-    
-    // Increment usage counter
-    setDailyUsage(prev => prev + 1);
-    
+    setDailyUsage((prev) => prev + 1);
+
     toast.success('Voice input processed successfully with Hasab AI!');
   };
 
@@ -119,7 +168,6 @@ function App() {
   };
 
   const handleProcessOCR = async (compress: boolean) => {
-    // Check usage limits for non-premium users
     if (!userProfile.isPremium && dailyUsage >= FREE_DAILY_LIMIT) {
       toast.error('Daily limit reached. Upgrade to Premium for unlimited conversions!');
       setShowUpgrade(true);
@@ -132,17 +180,14 @@ function App() {
     }
 
     setIsProcessing(true);
-    
+
     try {
-      // For now, we'll simulate OCR processing since the backend doesn't have OCR implemented yet
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // 🟢 IMPORTANT: Only use mock text if there's no existing text from voice input
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      let finalText = ocrText;
+
       if (!ocrText) {
-        console.log("📝 No existing text, using mock OCR result");
-        
-        // Mock OCR result in Amharic
-        const mockText = `የተመለከተው ሰነድ ስም: ${uploadedFile.name}
+        finalText = `የተመለከተው ሰነድ ስም: ${uploadedFile.name}
 
 ይህ የናሙና አማርኛ ጽሑፍ ነው። በትክክለኛው አፕሊኬሽን ውስጥ፣ የእጅ ጽሑፍ ምስሎች፣ የተቃኘ ፒዲኤፍ ወይም ሌሎች ሰነዶች ወደ ሊታረም የሚችል ጽሑፍ ይቀየራሉ።
 
@@ -150,28 +195,26 @@ function App() {
 
 ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
 
-        setOcrText(mockText);
+        setOcrText(finalText);
       } else {
-        console.log("📝 Using existing text from voice input, not overwriting with mock");
         toast.info('Using your voice input text');
       }
 
-      // Increment usage counter
-      setDailyUsage(prev => prev + 1);
+      setDailyUsage((prev) => prev + 1);
 
       toast.success('Document processed successfully!');
 
-      // Add to history if authenticated
       if (isAuthenticated) {
         const newResult: OCRResult = {
           id: Date.now().toString(),
           originalFileName: uploadedFile.name,
           fileType: uploadedFile.type,
           uploadDate: new Date(),
-          text: ocrText, // Use the current text (could be from voice or mock)
-          fileUrl: filePreviewUrl
+          text: finalText,
+          fileUrl: filePreviewUrl,
         };
-        setHistory(prev => [newResult, ...prev]);
+
+        setHistory((prev) => [newResult, ...prev]);
       }
     } catch (error) {
       console.error('OCR processing error:', error);
@@ -185,6 +228,7 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
     setIsAuthenticated(true);
     setUserProfile(profile);
     setShowAuth(false);
+
     toast.success(`Welcome back, ${profile.name}!`);
   };
 
@@ -193,43 +237,49 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
     localStorage.removeItem('user');
 
     setIsAuthenticated(false);
+
     setUserProfile({
       name: '',
       email: '',
       phone: '',
       organization: '',
-      isPremium: false
+      isPremium: false,
     });
+
     setHistory([]);
     setDailyUsage(0);
+
     toast.info('You have been logged out');
   };
 
   const handleUpdateProfile = (profile: UserProfile) => {
     setUserProfile(profile);
     setShowProfile(false);
+
     toast.success('Profile updated successfully');
   };
 
   const handleLoadFromHistory = (result: OCRResult) => {
     setOcrText(result.text);
     setShowHistory(false);
+
     toast.success('Loaded from history');
   };
 
   const handleUpgrade = () => {
-    // Simulate upgrade process
-    setUserProfile(prev => ({ ...prev, isPremium: true }));
+    setUserProfile((prev) => ({ ...prev, isPremium: true }));
     setShowUpgrade(false);
+
     toast.success('🎉 Congratulations! You are now a Premium member!');
   };
 
-  const canUseVoiceInput = true; // Voice input available for all users, just counts toward daily limit
+  const canUseVoiceInput = true;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50/30 via-stone-50 to-amber-50/50">
       <Toaster position="top-right" richColors />
-      <Header 
+
+      <Header
         isAuthenticated={isAuthenticated}
         userName={userProfile.name}
         onLoginClick={() => setShowAuth(true)}
@@ -243,19 +293,21 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
           <h1 className="text-4xl md:text-5xl mb-4 bg-gradient-to-r from-amber-800 via-amber-700 to-yellow-900 bg-clip-text text-transparent">
             የአማርኛ የእጅ ጽሑፍ OCR
           </h1>
+
           <p className="text-lg text-amber-900/80 max-w-2xl mx-auto">
             Preserve and digitize ancient Amharic scriptures and manuscripts
           </p>
+
           <p className="text-sm text-amber-800/60 mt-2">
             Advanced OCR technology for historical document preservation
           </p>
-          
-          {/* Usage Counter */}
+
           {!userProfile.isPremium && (
             <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-100 border border-amber-300 rounded-full text-sm text-amber-900">
               <span>
                 Daily usage: {dailyUsage} / {FREE_DAILY_LIMIT}
               </span>
+
               <button
                 onClick={() => setShowUpgrade(true)}
                 className="text-amber-800 hover:text-amber-900 underline font-medium"
@@ -264,7 +316,7 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
               </button>
             </div>
           )}
-          
+
           {userProfile.isPremium && (
             <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 rounded-full text-sm text-white">
               <span className="text-yellow-300">👑</span>
@@ -275,12 +327,12 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <div className="space-y-6">
-            <UploadSection 
+            <UploadSection
               onFileUpload={handleFileUpload}
               onVoiceInput={canUseVoiceInput ? handleVoiceInput : undefined}
               isProcessing={isProcessing}
             />
-            
+
             {uploadedFile && (
               <PreviewSection
                 file={uploadedFile}
@@ -296,12 +348,9 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
           <div className="space-y-6">
             {ocrText && (
               <>
-                <EditorSection 
-                  text={ocrText}
-                  onTextChange={setOcrText}
-                />
-                
-                <DownloadSection 
+                <EditorSection text={ocrText} onTextChange={setOcrText} />
+
+                <DownloadSection
                   text={ocrText}
                   fileName={uploadedFile?.name || 'document'}
                 />
@@ -318,12 +367,14 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
               titleAmharic="በርካታ ቅርጾች"
               description="Upload images, scanned PDFs, or provide URLs. Preview before processing."
             />
+
             <FeatureCard
               icon={<FileEdit className="w-12 h-12 text-amber-700" strokeWidth={1.5} />}
               title="Edit & Export"
               titleAmharic="አርትዕ እና ላክ"
               description="Edit converted text and download as plain text, Word document, or PDF."
             />
+
             <FeatureCard
               icon={<Archive className="w-12 h-12 text-amber-700" strokeWidth={1.5} />}
               title="Archive Tracking"
@@ -370,7 +421,12 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
   );
 }
 
-function FeatureCard({ icon, title, titleAmharic, description }: {
+function FeatureCard({
+  icon,
+  title,
+  titleAmharic,
+  description,
+}: {
   icon: React.ReactNode;
   title: string;
   titleAmharic: string;
