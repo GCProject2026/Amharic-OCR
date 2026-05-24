@@ -12,6 +12,7 @@ import { AuthModal } from './components/AuthModal';
 import { HistoryPanel } from './components/HistoryPanel';
 import { ProfileModal } from './components/ProfileModal';
 import { UpgradeModal } from './components/UpgradeModal';
+import { AdminDashboard } from './components/AdminDashboard';
 
 export interface UserProfile {
   name: string;
@@ -43,6 +44,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
   const [dailyUsage, setDailyUsage] = useState(0);
   const [userProfile, setUserProfile] = useState<UserProfile>({
     name: '',
@@ -236,6 +238,7 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
         onLogoutClick={handleLogout}
         onHistoryClick={() => setShowHistory(true)}
         onProfileClick={() => setShowProfile(true)}
+        onAdminClick={userProfile.isAdmin ? () => setShowAdminDashboard(true) : undefined}
       />
 
       <main className="container mx-auto px-4 py-8 max-w-7xl">
@@ -364,6 +367,12 @@ ${compress ? '(ፋይሉ ተጨምቋል - ጥራት ሳይቀንስ)' : ''}`;
           onUpgrade={handleUpgrade}
           currentUsage={dailyUsage}
           maxFreeUsage={FREE_DAILY_LIMIT}
+        />
+      )}
+
+      {showAdminDashboard && (
+        <AdminDashboard
+          onClose={() => setShowAdminDashboard(false)}
         />
       )}
     </div>
