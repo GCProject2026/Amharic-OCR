@@ -74,9 +74,6 @@ function App() {
         setUploadedFile(file);
         setRotation(0);
         
-        // Don't clear ocrText when uploading a new file
-        // setOcrText('');  <-- COMMENT THIS OUT
-        
         // Create preview URL
         const url = URL.createObjectURL(file);
         setFilePreviewUrl(url);

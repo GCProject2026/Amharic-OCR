@@ -1,16 +1,21 @@
-import { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  Users, 
-  FileText, 
-  Download, 
-  Bell, 
+import { useState, useRef, useEffect } from 'react';
+import {
+  LayoutDashboard,
+  Users,
+  FileText,
+  Download,
+  Bell,
   Search,
   Filter,
   ChevronLeft,
   ChevronRight,
   Menu,
-  X
+  X,
+  CheckCheck,
+  UserPlus,
+  Crown,
+  AlertCircle,
+  Upload
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -154,13 +159,48 @@ const mockUsers: AdminUser[] = [
   },
 ];
 
+interface Notification {
+  id: string;
+  type: 'user_joined' | 'upgrade' | 'upload' | 'alert';
+  message: string;
+  detail: string;
+  time: string;
+  read: boolean;
+}
+
+const initialNotifications: Notification[] = [
+  { id: '1', type: 'user_joined', message: 'New user registered', detail: 'ሊያ ገብሩ joined just now', time: '2 min ago', read: false },
+  { id: '2', type: 'upgrade', message: 'Premium upgrade', detail: 'ኪዳነ ገብረመስቀል upgraded to Premium', time: '1 hour ago', read: false },
+  { id: '3', type: 'upload', message: 'Large batch upload', detail: 'ደሳለኝ አለማየሁ uploaded 12 files', time: '3 hours ago', read: false },
+  { id: '4', type: 'alert', message: 'Daily limit hit', detail: 'ብርሃን መኮንን reached free tier limit', time: '5 hours ago', read: true },
+  { id: '5', type: 'user_joined', message: 'New user registered', detail: 'እስቴር ካሳሁን joined', time: '1 day ago', read: true },
+];
+
 export function AdminDashboard({ onClose }: AdminDashboardProps) {
   const [activeSection, setActiveSection] = useState<'dashboard' | 'users'>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPremium, setFilterPremium] = useState<'all' | 'premium' | 'free'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
+  const notifRef = useRef<HTMLDivElement>(null);
   const itemsPerPage = 5;
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    }
+    if (notifOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [notifOpen]);
+
+  const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const markRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
 
   // Calculate statistics
   const stats: AdminStats = {
@@ -285,10 +325,80 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
               </div>
 
               <div className="flex items-center gap-3">
-                <button className="relative p-2 text-amber-900 hover:bg-amber-100 rounded-lg transition-colors">
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </button>
+                {/* Notification Bell */}
+                <div className="relative" ref={notifRef}>
+                  <button
+                    onClick={() => setNotifOpen(prev => !prev)}
+                    className="relative p-2 text-amber-900 hover:bg-amber-100 rounded-lg transition-colors"
+                  >
+                    <Bell className="w-5 h-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-red-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-[10px] font-bold px-0.5">{unreadCount}</span>
+                      </span>
+                    )}
+                  </button>
+
+                  {notifOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-80 bg-white border-2 border-amber-200 rounded-xl shadow-2xl z-50 overflow-hidden">
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-50 to-stone-50 border-b-2 border-amber-200">
+                        <div className="flex items-center gap-2">
+                          <Bell className="w-4 h-4 text-amber-800" />
+                          <span className="font-semibold text-amber-900 text-sm">Notifications</span>
+                          {unreadCount > 0 && (
+                            <span className="bg-red-100 text-red-700 text-xs font-bold px-1.5 py-0.5 rounded-full">{unreadCount}</span>
+                          )}
+                        </div>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={markAllRead}
+                            className="flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 transition-colors"
+                          >
+                            <CheckCheck className="w-3.5 h-3.5" />
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Notification List */}
+                      <div className="max-h-80 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="py-8 text-center text-amber-700 text-sm">No notifications</div>
+                        ) : (
+                          notifications.map(n => (
+                            <button
+                              key={n.id}
+                              onClick={() => markRead(n.id)}
+                              className={`w-full text-left flex items-start gap-3 px-4 py-3 border-b border-amber-100 last:border-0 transition-colors ${
+                                n.read ? 'bg-white hover:bg-amber-50/40' : 'bg-amber-50/60 hover:bg-amber-100/60'
+                              }`}
+                            >
+                              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5 ${
+                                n.type === 'user_joined' ? 'bg-blue-100' :
+                                n.type === 'upgrade' ? 'bg-amber-100' :
+                                n.type === 'upload' ? 'bg-green-100' : 'bg-red-100'
+                              }`}>
+                                {n.type === 'user_joined' && <UserPlus className="w-4 h-4 text-blue-600" />}
+                                {n.type === 'upgrade' && <Crown className="w-4 h-4 text-amber-700" />}
+                                {n.type === 'upload' && <Upload className="w-4 h-4 text-green-600" />}
+                                {n.type === 'alert' && <AlertCircle className="w-4 h-4 text-red-500" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-amber-900">{n.message}</p>
+                                <p className="text-xs text-amber-700 mt-0.5 truncate">{n.detail}</p>
+                                <p className="text-xs text-amber-500 mt-1">{n.time}</p>
+                              </div>
+                              {!n.read && (
+                                <span className="flex-shrink-0 w-2 h-2 bg-amber-600 rounded-full mt-2" />
+                              )}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 px-3 py-2 bg-amber-100 border border-amber-300 rounded-lg">
                   <div className="w-8 h-8 bg-gradient-to-br from-amber-800 to-amber-700 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm">A</span>
