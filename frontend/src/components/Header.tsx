@@ -1,4 +1,4 @@
-import { User, BookOpen, LogOut, ScrollText } from 'lucide-react';
+import { User, BookOpen, LogOut, ScrollText, Shield } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface HeaderProps {
@@ -8,6 +8,7 @@ interface HeaderProps {
   onLogoutClick: () => void;
   onHistoryClick: () => void;
   onProfileClick: () => void;
+  onAdminClick?: () => void;
 }
 
 export function Header({ 
@@ -16,7 +17,8 @@ export function Header({
   onLoginClick, 
   onLogoutClick,
   onHistoryClick,
-  onProfileClick 
+  onProfileClick,
+  onAdminClick
 }: HeaderProps) {
   return (
     <header className="bg-gradient-to-r from-amber-50 via-stone-50 to-amber-50 border-b-2 border-amber-900/20 sticky top-0 z-50 shadow-md">
@@ -72,7 +74,32 @@ export function Header({
                 className="sm:hidden text-amber-900 hover:bg-amber-100"
               >
                 <User className="w-4 h-4" />
-              </Button>
+              </Button> 
+              
+              {/* Admin Button - Desktop */}
+              {onAdminClick && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onAdminClick}
+                  className="hidden sm:flex text-amber-900 hover:text-amber-950 hover:bg-amber-100"
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Admin
+                </Button>
+              )}
+              
+              {/* Admin Button - Mobile */}
+              {onAdminClick && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onAdminClick}
+                  className="sm:hidden text-amber-900 hover:bg-amber-100"
+                >
+                  <Shield className="w-4 h-4" />
+                </Button>
+              )}
               
               {/* Logout Button - Desktop */}
               <Button
